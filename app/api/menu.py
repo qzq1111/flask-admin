@@ -25,7 +25,7 @@ class CreateMenu(Resource):
         parent_id = args.get("parent_id")
         # 判断父级ID是否存在
         if parent_id:
-            query = db.session.query(SysMenu).filter(SysMenu.menu_id == parent_id, SysMenu.status == 1).first()
+            query = db.session.query(SysMenu).filter(SysMenu.menu_id == parent_id).first()
             if not query:
                 res.update(code=-1, msg="父菜单不存在")
                 return res.data
@@ -40,4 +40,22 @@ class CreateMenu(Resource):
             db.session.rollback()
             res.update(code=-1, msg=str(e))
 
+        return res.data
+
+
+class GetMenuList(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('menu_title', type=str, required=False, help='显示的菜单名')
+
+    def post(self):
+        res = ResMsg()
+        args = self.parser.parse_args()
+        menu_title = args.get("menu_title")
+
+        query = db.session.query(SysMenu)
+        if menu_title:
+            query = query.filter(SysMenu.menu_title.like(f"%{menu_title}%"))
+        query = query.all()
+        data = list(map(lambda x: {p.key: getattr(x, p.key) for p in SysMenu.__mapper__.iterate_properties}, query))
+        res.update(data=data)
         return res.data
