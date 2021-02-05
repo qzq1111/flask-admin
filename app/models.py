@@ -50,8 +50,8 @@ class SysMenu(db.Model):
     path = db.Column(db.String(200), info="路由地址")  # 路由地址
     component = db.Column(db.String(255), info="组件地址")  # 组件地址
     menu_type = db.Column(db.String(1), info="菜单类型 M目录 C菜单 F按钮")  # 菜单类型 M目录 C菜单 F按钮
-    status = db.Column(db.Integer, info="菜单状态1显示 0隐藏")  # 菜单状态1显示 0隐藏
-    visible = db.Column(db.Integer, info="菜单状态1正常 0停用")  # 菜单状态1正常 0停用
+    status = db.Column(db.Integer, info=" 菜单状态1正常 0停用")  # 菜单状态1显示 0隐藏
+    visible = db.Column(db.Integer, info="菜单状态1显示 0隐藏")  # 菜单状态1正常 0停用
     perms = db.Column(db.String(50), info="权限标识")  # 权限标识
     icon = db.Column(db.String(100), info="菜单图标")  # 菜单图标
     remark = db.Column(db.String(500), info="备注")  # 备注
