@@ -2,79 +2,30 @@ from flask_restful import Resource, reqparse
 
 from app.models import SysMenu, db
 from app.response import ResMsg
+from app.utils import BuildMenuTree
 
 
-class BuildMenuTree(object):
+class GetMenu(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('menu_id', type=int, required=True, help='菜单ID')
 
-    def __init__(self, menus):
-        self.menus = menus
+    def post(self):
+        """获取菜单"""
+        res = ResMsg()
+        args = self.parser.parse_args()
+        menu_id = args.get("menu_id")
+        if not menu_id:
+            res.update(code=-1, msg="参数缺失")
+            return res.data
 
-    @staticmethod
-    def __generate_node(menu) -> dict:
+        query = db.session.query(SysMenu).filter(SysMenu.menu_id == menu_id).first()
+        if not query:
+            res.update(code=-1, msg="菜单栏不存在")
+            return res.data
 
-        node = {
-            "id": menu.menu_id,
-            "name": menu.menu_name,
-            "path": menu.path,
-            "component": menu.component,
-            "hidden": menu.visible == 0,
-            "meta": {
-                "icon": menu.icon,
-                "title": menu.menu_title,
-            },
-            "children": [],
-        }
-        return node
-
-    def sidebar_tree(self):
-        """生成侧边栏"""
-        data = list()
-        for menu in self.menus:
-            if menu.parent_id != 0 or menu.status == 0:
-                continue
-            node = self.__generate_node(menu)
-            node["alwaysShow"] = True
-            node["redirect"] = "noRedirect"
-            menus = self.__build_sidebar_tree(node)
-            data.append(menus)
-        return data
-
-    def __build_sidebar_tree(self, child):
-        data = list()
-
-        for menu in self.menus:
-            if menu.parent_id != child["id"] or menu.status == 0:
-                continue
-            node = self.__generate_node(menu)
-            if menu.menu_type != "F":
-                child_menu = self.__build_sidebar_tree(node)
-                data.append(child_menu)
-        child["children"] = data
-        return child
-
-    def label_tree(self) -> list:
-        """生成label树"""
-        data = list()
-
-        for menu in self.menus:
-            if menu.parent_id != 0 or menu.status == 0:
-                continue
-            node = dict(id=menu.menu_id, label=menu.menu_title, children=[])
-            menus = self.__build_label_tree(node)
-            data.append(menus)
-        return data
-
-    def __build_label_tree(self, child: dict) -> dict:
-        data = list()
-
-        for menu in self.menus:
-            if menu.parent_id != child["id"] or menu.status == 0:
-                continue
-            node = dict(id=menu.menu_id, label=menu.menu_title, children=[])
-            child_menu = self.__build_label_tree(node)
-            data.append(child_menu)
-        child["children"] = data
-        return child
+        data = {p.key: getattr(query, p.key) for p in SysMenu.__mapper__.iterate_properties}
+        res.update(data=data)
+        return res.data
 
 
 class CreateMenu(Resource):
