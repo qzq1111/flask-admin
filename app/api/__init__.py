@@ -1,6 +1,7 @@
 from flask import Blueprint
 from flask_restful import Api
 
+from app.api.menu import CreateMenu
 from app.api.role import CreateRole
 from app.api.user import UserLogin, CreateUser
 
@@ -14,3 +15,8 @@ api_user.add_resource(CreateUser, '/add')
 api_role_bp = Blueprint("role", __name__, url_prefix="/api/v1/role")
 api_role = Api(api_role_bp)
 api_role.add_resource(CreateRole, '/add')
+
+# 菜单
+api_menu_bp = Blueprint("menu", __name__, url_prefix="/api/v1/menu")
+api_menu = Api(api_menu_bp)
+api_menu.add_resource(CreateMenu, '/add')
