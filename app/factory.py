@@ -7,7 +7,7 @@ from flask import Flask
 from flask.json import JSONEncoder as BaseJSONEncoder
 
 from app.models import db
-from app.api import api
+from app.api import api_user_bp, api_role_bp
 from app.response import custom_abort
 
 
@@ -18,9 +18,11 @@ def create_app(config):
     app.config["RESTFUL_JSON"] = {"cls": JSONEncoder, "ensure_ascii": False}
 
     app.json_encoder = JSONEncoder
-    db.init_app(app)
-    api.init_app(app)
     flask_restful.abort = custom_abort
+    db.init_app(app)
+    
+    app.register_blueprint(api_user_bp)
+    app.register_blueprint(api_role_bp)
 
     return app
 
