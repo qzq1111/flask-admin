@@ -1,5 +1,6 @@
 from flask_restful import Resource, reqparse
 
+from app import utils
 from app.auth import Auth
 from app.models import SysUser, db
 from app.response import ResMsg
@@ -25,5 +26,39 @@ class UserLogin(Resource):
             return res.data
 
         res.update(data={"token": Auth.generate_access_token(user_id=user.user_id)})
+
+        return res.data
+
+
+class CreateUser(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('user_name', type=str, required=True, help='账号缺失')
+    parser.add_argument('password', type=str, required=True, help='密码缺失')
+
+    def post(self):
+        res = ResMsg()
+        args = self.parser.parse_args()
+        user_name = args.get("user_name")
+        password = args.get("password")
+
+        if not user_name or not password:
+            res.update(code=-1, msg="参数缺失")
+            return res.data
+
+        user = SysUser.query.filter(SysUser.user_name == user_name).first()
+        if user:
+            res.update(code=-1, msg="用户已存在")
+            return res.data
+
+        try:
+            new = SysUser()
+            new.user_name = str(user_name).strip()
+            new.password = utils.get_md5(str(password).strip().encode("utf-8"))
+            db.session.add(new)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            res.update(code=-1, msg=str(e))
+            return res.data
 
         return res.data
