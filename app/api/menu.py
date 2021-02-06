@@ -167,3 +167,36 @@ class SelectMenus(Resource):
         data = tree.label_tree()
         res.update(data=data)
         return res.data
+
+
+class DeleteMenu(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('menu_id', type=int, required=True, help='菜单ID')
+
+    def post(self):
+        """删除菜单"""
+        res = ResMsg()
+        args = self.parser.parse_args()
+        menu_id = args.get("menu_id")
+        if not menu_id:
+            res.update(code=-1, msg="参数缺失")
+            return res.data
+
+        # 是否存在子菜单
+        is_exist_children = db.session.query(SysMenu).filter(SysMenu.parent_id == menu_id).first()
+        if is_exist_children:
+            res.update(code=-1, msg="存在子菜单无法删除")
+            return res.data
+
+        query = db.session.query(SysMenu).filter(SysMenu.menu_id == menu_id).first()
+        if not query:
+            return res.data
+
+        try:
+            db.session.delete(query)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            res.update(code=-1, msg=str(e))
+
+        return res.data
