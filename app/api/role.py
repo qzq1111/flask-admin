@@ -2,6 +2,7 @@ from flask_restful import Resource, reqparse
 
 from app.models import SysRole, SysMenu, SysRoleMenu, db
 from app.response import ResMsg
+from app.utils import BuildMenuTree
 
 
 class CreateRole(Resource):
@@ -10,6 +11,7 @@ class CreateRole(Resource):
     parser.add_argument('menu_ids', type=int, action='append', help='菜单列表')
 
     def post(self):
+        """创建角色"""
         res = ResMsg()
         args = self.parser.parse_args()
         role_name = args.get("role_name")
@@ -58,6 +60,7 @@ class UpdateRole(Resource):
     parser.add_argument('menu_ids', type=int, action='append', help='菜单列表')
 
     def post(self):
+        """更新角色"""
         res = ResMsg()
         args = self.parser.parse_args()
         role_id = args.get("role_id")
@@ -113,6 +116,7 @@ class GetRole(Resource):
     parser.add_argument('role_id', type=int, required=True, help='角色ID')
 
     def post(self):
+        """获取角色"""
         res = ResMsg()
         args = self.parser.parse_args()
         role_id = args.get("role_id")
@@ -128,4 +132,30 @@ class GetRole(Resource):
 
         data = {p.key: getattr(role, p.key) for p in SysRole.__mapper__.iterate_properties}
         res.update(data=data)
+        return res.data
+
+
+class RoleCheckMenus(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('role_id', type=int, required=True, help='角色ID')
+
+    def post(self):
+        res = ResMsg()
+        args = self.parser.parse_args()
+        role_id = args.get("role_id")
+
+        if not role_id:
+            res.update(code=-1, msg="参数缺失")
+            return res.data
+
+        role = SysRole.query.filter(SysRole.role_id == role_id).first()
+        if not role:
+            res.update(code=-1, msg="角色不存在")
+            return res.data
+
+        menus = db.session.query(SysRoleMenu.menu_id).filter(SysRoleMenu.role_id == role_id).all()
+
+        data = [item.menu_id for item in menus]
+        res.update(data=data)
+
         return res.data
