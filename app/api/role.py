@@ -106,3 +106,26 @@ class UpdateRole(Resource):
             return res.data
 
         return res.data
+
+
+class GetRole(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('role_id', type=int, required=True, help='角色ID')
+
+    def post(self):
+        res = ResMsg()
+        args = self.parser.parse_args()
+        role_id = args.get("role_id")
+
+        if not role_id:
+            res.update(code=-1, msg="参数缺失")
+            return res.data
+
+        role = SysRole.query.filter(SysRole.role_id == role_id).first()
+        if not role:
+            res.update(code=-1, msg="角色不存在")
+            return res.data
+
+        data = {p.key: getattr(role, p.key) for p in SysRole.__mapper__.iterate_properties}
+        res.update(data=data)
+        return res.data
