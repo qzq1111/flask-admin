@@ -2,7 +2,7 @@ from flask import Blueprint
 from flask_restful import Api
 
 from app.api.menu import CreateMenu, GetMenuList, SelectMenus, GetMenu, UpdateMenu, DeleteMenu
-from app.api.role import CreateRole
+from app.api.role import CreateRole, UpdateRole
 from app.api.user import UserLogin, CreateUser
 
 # 用户
@@ -15,6 +15,7 @@ api_user.add_resource(CreateUser, '/add')
 api_role_bp = Blueprint("role", __name__, url_prefix="/api/v1/role")
 api_role = Api(api_role_bp)
 api_role.add_resource(CreateRole, '/add')
+api_role.add_resource(UpdateRole, '/update')
 
 # 菜单
 api_menu_bp = Blueprint("menu", __name__, url_prefix="/api/v1/menu")

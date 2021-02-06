@@ -19,9 +19,9 @@ class CreateRole(Resource):
             res.update(code=-1, msg="参数缺失")
             return res.data
 
-        user = SysRole.query.filter(SysRole.role_name == role_name).first()
-        if user:
-            res.update(code=-1, msg="角色已存在")
+        role = SysRole.query.filter(SysRole.role_name == role_name).first()
+        if role:
+            res.update(code=-1, msg="角色名已存在")
             return res.data
 
         menu_ids = set(menu_ids)
@@ -40,6 +40,63 @@ class CreateRole(Resource):
             db.session.flush()
             if menu_ids:
                 role_menus = [dict(menu_id=item, role_id=new.role_id) for item in menu_ids]
+                db.session.execute(SysRoleMenu.__table__.insert(role_menus))
+                db.session.flush()
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            res.update(code=-1, msg=str(e))
+            return res.data
+
+        return res.data
+
+
+class UpdateRole(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('role_id', type=int, required=True, help='角色ID')
+    parser.add_argument('role_name', type=str, required=True, help='角色名')
+    parser.add_argument('menu_ids', type=int, action='append', help='菜单列表')
+
+    def post(self):
+        res = ResMsg()
+        args = self.parser.parse_args()
+        role_id = args.get("role_id")
+        role_name = args.get("role_name")
+        menu_ids = args.get("menu_ids") or []
+
+        if not role_name or not role_id:
+            res.update(code=-1, msg="参数缺失")
+            return res.data
+
+        role = SysRole.query.filter(SysRole.role_id == role_id).first()
+        if not role:
+            res.update(code=-1, msg="角色不存在")
+            return res.data
+
+        ist_exist_role_name = SysRole.query.filter(SysRole.role_id != role_id, SysRole.role_name == role_name).first()
+        if ist_exist_role_name:
+            res.update(code=-1, msg="角色名已存在")
+            return res.data
+
+        menu_ids = set(menu_ids)
+        if menu_ids:
+            query_menu = db.session.query(SysMenu.menu_id).filter(SysMenu.menu_id.in_(menu_ids)).all()
+            is_exist_menu = set([item.menu_id for item in query_menu])
+
+            if len(menu_ids) != len(is_exist_menu):
+                res.update(code=-1, msg="绑定了不存在的菜单")
+                return res.data
+
+        try:
+
+            role.role_name = str(role_name).strip()
+            db.session.add(role)
+            db.session.flush()
+            # 删除原有菜单
+            db.session.query(SysRoleMenu).filter(SysRoleMenu.role_id == role_id).delete(synchronize_session=False)
+            if menu_ids:
+                # 绑定新菜单
+                role_menus = [dict(menu_id=item, role_id=role.role_id) for item in menu_ids]
                 db.session.execute(SysRoleMenu.__table__.insert(role_menus))
                 db.session.flush()
             db.session.commit()
