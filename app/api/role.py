@@ -5,7 +5,7 @@ from app.response import ResMsg
 from app.utils import BuildMenuTree
 
 
-class CreateRole(Resource):
+class RoleResource(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('role_name', type=str, required=True, help='角色名')
     parser.add_argument('menu_ids', type=int, action='append', help='菜单列表')
@@ -52,18 +52,26 @@ class CreateRole(Resource):
 
         return res.data
 
+    def get(self, role_id):
+        """获取角色"""
+        res = ResMsg()
+        if not role_id:
+            res.update(code=-1, msg="参数缺失")
+            return res.data
 
-class UpdateRole(Resource):
-    parser = reqparse.RequestParser()
-    parser.add_argument('role_id', type=int, required=True, help='角色ID')
-    parser.add_argument('role_name', type=str, required=True, help='角色名')
-    parser.add_argument('menu_ids', type=int, action='append', help='菜单列表')
+        role = SysRole.query.filter(SysRole.role_id == role_id).first()
+        if not role:
+            res.update(code=-1, msg="角色不存在")
+            return res.data
 
-    def post(self):
+        data = {p.key: getattr(role, p.key) for p in SysRole.__mapper__.iterate_properties}
+        res.update(data=data)
+        return res.data
+
+    def put(self, role_id):
         """更新角色"""
         res = ResMsg()
         args = self.parser.parse_args()
-        role_id = args.get("role_id")
         role_name = args.get("role_name")
         menu_ids = args.get("menu_ids") or []
 
@@ -111,38 +119,10 @@ class UpdateRole(Resource):
         return res.data
 
 
-class GetRole(Resource):
-    parser = reqparse.RequestParser()
-    parser.add_argument('role_id', type=int, required=True, help='角色ID')
+class RoleCheckMenusResource(Resource):
 
-    def post(self):
-        """获取角色"""
+    def get(self, role_id):
         res = ResMsg()
-        args = self.parser.parse_args()
-        role_id = args.get("role_id")
-
-        if not role_id:
-            res.update(code=-1, msg="参数缺失")
-            return res.data
-
-        role = SysRole.query.filter(SysRole.role_id == role_id).first()
-        if not role:
-            res.update(code=-1, msg="角色不存在")
-            return res.data
-
-        data = {p.key: getattr(role, p.key) for p in SysRole.__mapper__.iterate_properties}
-        res.update(data=data)
-        return res.data
-
-
-class RoleCheckMenus(Resource):
-    parser = reqparse.RequestParser()
-    parser.add_argument('role_id', type=int, required=True, help='角色ID')
-
-    def post(self):
-        res = ResMsg()
-        args = self.parser.parse_args()
-        role_id = args.get("role_id")
 
         if not role_id:
             res.update(code=-1, msg="参数缺失")
