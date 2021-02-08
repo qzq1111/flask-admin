@@ -3,13 +3,13 @@ from flask_restful import Api
 
 from app.api.menu import CreateMenu, GetMenuList, SelectMenus, GetMenu, UpdateMenu, DeleteMenu
 from app.api.role import CreateRole, UpdateRole, GetRole, RoleCheckMenus
-from app.api.user import UserLogin, CreateUser
+from app.api.user import UserLogin, UserResource
 
 # 用户
 api_user_bp = Blueprint("user", __name__, url_prefix="/api/v1/user")
 api_user = Api(api_user_bp)
 api_user.add_resource(UserLogin, '/login')
-api_user.add_resource(CreateUser, '/add')
+api_user.add_resource(UserResource, '', "/<int:user_id>")
 
 # 角色
 api_role_bp = Blueprint("role", __name__, url_prefix="/api/v1/role")

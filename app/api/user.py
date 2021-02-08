@@ -30,12 +30,13 @@ class UserLogin(Resource):
         return res.data
 
 
-class CreateUser(Resource):
+class UserResource(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('user_name', type=str, required=True, help='账号缺失')
     parser.add_argument('password', type=str, required=True, help='密码缺失')
 
     def post(self):
+        """新建用户"""
         res = ResMsg()
         args = self.parser.parse_args()
         user_name = args.get("user_name")
@@ -55,6 +56,42 @@ class CreateUser(Resource):
             new.user_name = str(user_name).strip()
             new.password = utils.get_md5(str(password).strip().encode("utf-8"))
             db.session.add(new)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            res.update(code=-1, msg=str(e))
+            return res.data
+
+        return res.data
+
+    def get(self, user_id):
+        """获取用户"""
+        res = ResMsg()
+        if not user_id:
+            res.update(code=-1, msg="参数缺失")
+            return res.data
+
+        user = SysUser.query.filter(SysUser.user_id == user_id).first()
+        if not user:
+            res.update(code=-1, msg="用户不存在")
+            return res.data
+        data = {p.key: getattr(user, p.key) for p in SysUser.__mapper__.iterate_properties}
+        res.update(data=data)
+        return res.data
+
+    def delete(self, user_id):
+        """删除用户"""
+        res = ResMsg()
+        if not user_id:
+            res.update(code=-1, msg="参数缺失")
+            return res.data
+
+        user = SysUser.query.filter(SysUser.user_id == user_id).first()
+        if not user:
+            return res.data
+
+        try:
+            db.session.delete(user)
             db.session.commit()
         except Exception as e:
             db.session.rollback()
