@@ -1,5 +1,6 @@
 from flask_restful import Resource, reqparse
 
+from app.auth import login_required
 from app.models import SysRole, SysMenu, SysRoleMenu, db
 from app.response import ResMsg
 from app.utils import BuildMenuTree
@@ -10,6 +11,7 @@ class RoleResource(Resource):
     parser.add_argument('role_name', type=str, required=True, help='角色名')
     parser.add_argument('menu_ids', type=int, action='append', help='菜单列表')
 
+    @login_required
     def post(self):
         """创建角色"""
         res = ResMsg()
@@ -52,6 +54,7 @@ class RoleResource(Resource):
 
         return res.data
 
+    @login_required
     def get(self, role_id):
         """获取角色"""
         res = ResMsg()
@@ -68,6 +71,7 @@ class RoleResource(Resource):
         res.update(data=data)
         return res.data
 
+    @login_required
     def put(self, role_id):
         """更新角色"""
         res = ResMsg()
@@ -121,6 +125,7 @@ class RoleResource(Resource):
 
 class RoleCheckMenusResource(Resource):
 
+    @login_required
     def get(self, role_id):
         res = ResMsg()
 

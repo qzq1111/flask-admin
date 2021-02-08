@@ -1,5 +1,6 @@
 from flask_restful import Resource, reqparse
 
+from app.auth import login_required
 from app.models import SysMenu, db
 from app.response import ResMsg
 from app.utils import BuildMenuTree
@@ -20,6 +21,7 @@ class MenuResource(Resource):
     parser.add_argument('icon', type=str, required=True, help='菜单图标')
     parser.add_argument('remark', type=str, required=True, help='备注')
 
+    @login_required
     def post(self):
         """创建菜单"""
         res = ResMsg()
@@ -44,6 +46,7 @@ class MenuResource(Resource):
 
         return res.data
 
+    @login_required
     def get(self, menu_id):
         """获取菜单"""
         res = ResMsg()
@@ -60,6 +63,7 @@ class MenuResource(Resource):
         res.update(data=data)
         return res.data
 
+    @login_required
     def put(self, menu_id):
         """修改菜单"""
         res = ResMsg()
@@ -113,6 +117,7 @@ class MenuResource(Resource):
             res.update(code=-1, msg=str(e))
         return res.data
 
+    @login_required
     def delete(self, menu_id):
         """删除菜单"""
         res = ResMsg()
@@ -144,6 +149,7 @@ class GetMenuList(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('menu_title', type=str, required=False, help='显示的菜单名')
 
+    @login_required
     def get(self):
         """获取所有菜单列表"""
         res = ResMsg()
@@ -161,6 +167,7 @@ class GetMenuList(Resource):
 
 class SelectMenus(Resource):
 
+    @login_required
     def get(self):
         """获取菜单树结构，用于赋权"""
         res = ResMsg()
