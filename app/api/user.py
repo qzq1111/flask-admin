@@ -1,7 +1,7 @@
 from flask_restful import Resource, reqparse
 
 from app import utils
-from app.auth import Auth
+from app.auth import login_required, generate_access_token
 from app.models import SysUser, db
 from app.response import ResMsg
 
@@ -25,7 +25,7 @@ class UserLogin(Resource):
             res.update(code=-1, msg="账号或密码错误")
             return res.data
 
-        res.update(data={"token": Auth.generate_access_token(user_id=user.user_id)})
+        res.update(data={"token": generate_access_token(user_id=user.user_id)})
 
         return res.data
 
@@ -35,6 +35,7 @@ class UserResource(Resource):
     parser.add_argument('user_name', type=str, required=True, help='账号缺失')
     parser.add_argument('password', type=str, required=True, help='密码缺失')
 
+    @login_required
     def post(self):
         """新建用户"""
         res = ResMsg()
@@ -64,6 +65,7 @@ class UserResource(Resource):
 
         return res.data
 
+    @login_required
     def get(self, user_id):
         """获取用户"""
         res = ResMsg()
@@ -79,6 +81,7 @@ class UserResource(Resource):
         res.update(data=data)
         return res.data
 
+    @login_required
     def delete(self, user_id):
         """删除用户"""
         res = ResMsg()

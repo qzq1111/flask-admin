@@ -5,45 +5,44 @@ from functools import wraps
 
 from app.response import ResMsg
 
+key = 'super-man$&123das%qzq'
 
-class Auth(object):
-    key = 'super-man$&123das%qzq'
 
-    @classmethod
-    def generate_access_token(cls, user_id, algorithm: str = 'HS256', exp: float = 2):
-        """
-        生成access_token
-        :param user_id:自定义部分
-        :param algorithm:加密算法
-        :param exp:过期时间
-        :return:
-        """
+def generate_access_token(user_id, algorithm: str = 'HS256', exp: float = 2):
+    """
+    生成access_token
+    :param user_id:自定义部分
+    :param algorithm:加密算法
+    :param exp:过期时间
+    :return:
+    """
 
-        now = datetime.utcnow()
-        exp_datetime = now + timedelta(hours=exp)
-        access_payload = {
-            'exp': exp_datetime,
-            'flag': 0,  # 标识是否为一次性token，0是，1不是
-            'iat': now,  # 开始时间
-            'iss': 'qin',  # 签名
-            'user_id': user_id  # 自定义部分
-        }
-        access_token = jwt.encode(access_payload, cls.key, algorithm=algorithm)
-        return access_token
+    now = datetime.utcnow()
+    exp_datetime = now + timedelta(hours=exp)
+    access_payload = {
+        'exp': exp_datetime,
+        'flag': 0,  # 标识是否为一次性token，0是，1不是
+        'iat': now,  # 开始时间
+        'iss': 'qin',  # 签名
+        'user_id': user_id  # 自定义部分
+    }
+    access_token = jwt.encode(access_payload, key, algorithm=algorithm)
+    return access_token
 
-    @classmethod
-    def decode_auth_token(cls, token: str):
-        """
-        验证token
-        :param token:
-        :return:
-        """
-        try:
-            payload = jwt.decode(token, key=cls.key, )
-        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, jwt.InvalidSignatureError):
-            return None
-        else:
-            return payload
+
+def decode_auth_token(token: str):
+    """
+    验证token
+    :param token:
+    :return:
+    """
+    try:
+        payload = jwt.decode(token, key=key, algorithms=['HS256'])
+    except Exception as e:
+        print(e)
+        return None
+    else:
+        return payload
 
 
 def login_required(f):
@@ -56,10 +55,16 @@ def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         res = ResMsg()
-        token = request.headers.get("toke", default=None)
+
+        token = request.headers.get("Authorization", default=None)
         if not token:
             res.update(code=-1, msg="请登录")
             return res.data
+        payload = decode_auth_token(token)
+        if not payload:
+            res.update(code=-1, msg="请登录")
+            return res.data
+
         return f(*args, **kwargs)
 
     return wrapper
