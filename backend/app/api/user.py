@@ -133,6 +133,41 @@ class UserResource(Resource):
         return res.data
 
 
+class UserListResource(Resource):
+    parser = reqparse.RequestParser()
+
+    parser.add_argument('user_name', type=str, help='用户账号')
+    parser.add_argument('page', type=int, help='页码')
+    parser.add_argument('page_size', type=int, help='条数')
+
+    @login_required
+    def get(self):
+        """获取用户列表"""
+        res = ResMsg()
+        args = self.parser.parse_args()
+        user_name = args.get("user_name")
+        page = args.get("page") or mark.DefaultPage
+        page_size = args.get("page_size") or mark.DefaultPageSize
+
+        query = db.session.query(SysUser.user_id, SysUser.user_name,
+                                 SysUser.status, SysUser.create_time,
+                                 SysRole.role_id, SysRole.role_name,
+                                 ). \
+            join(SysUserRole, SysUserRole.user_id == SysUser.user_id). \
+            join(SysRole, SysRole.role_id == SysUserRole.role_id)
+        if user_name:
+            query = query.filter(SysUser.user_name.like(f"%{user_name}%"))
+
+        total = query.count()
+
+        users = query.slice((page - 1) * page_size, page * page_size).all()
+        data = [dict(zip(user.keys(), user)) for user in users]
+        res.update(data=data)
+        res.add_field("total", total)
+
+        return res.data
+
+
 class UserInfoResource(Resource):
 
     @login_required
