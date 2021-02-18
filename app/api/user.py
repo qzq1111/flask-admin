@@ -182,10 +182,14 @@ class UserMenuResource(Resource):
         """获取用户菜单"""
         res = ResMsg()
         role_id = g.role_id
+        user_id = g.user_id
 
-        query = db.session.query(SysMenu). \
-            join(SysRoleMenu, SysRoleMenu.menu_id == SysMenu.menu_id). \
-            filter(SysRoleMenu.role_id == role_id).all()
+        if user_id == 1:
+            query = db.session.query(SysMenu).all()
+        else:
+            query = db.session.query(SysMenu). \
+                join(SysRoleMenu, SysRoleMenu.menu_id == SysMenu.menu_id). \
+                filter(SysRoleMenu.role_id == role_id).all()
         tree = BuildMenuTree(query)
         data = tree.sidebar_tree()
         res.update(data=data)
