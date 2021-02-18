@@ -35,6 +35,7 @@ class UserResource(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('user_name', type=str, required=True, help='账号缺失')
     parser.add_argument('password', type=str, required=True, help='密码缺失')
+    parser.add_argument('role_id', type=int, required=True, help='角色缺失')
 
     @login_required
     def post(self):
@@ -43,21 +44,36 @@ class UserResource(Resource):
         args = self.parser.parse_args()
         user_name = args.get("user_name")
         password = args.get("password")
+        role_id = args.get("role_id")
 
-        if not user_name or not password:
+        if not user_name or not password or not role_id:
             res.update(code=-1, msg="参数缺失")
             return res.data
 
+        # 判断用户名是否重复
         user = SysUser.query.filter(SysUser.user_name == user_name).first()
         if user:
             res.update(code=-1, msg="用户已存在")
             return res.data
 
+        # 判断角色是否存在
+        role = SysRole.query.filter(SysRole.role_id == role_id, SysRole.status == mark.Enable).first()
+        if not role:
+            res.update(code=-1, msg="角色不存在或已被禁用")
+            return res.data
+
         try:
-            new = SysUser()
-            new.user_name = str(user_name).strip()
-            new.password = utils.get_md5(str(password).strip().encode("utf-8"))
-            db.session.add(new)
+            new_user = SysUser()
+            new_user.user_name = str(user_name).strip()
+            new_user.password = utils.get_md5(str(password).strip().encode("utf-8"))
+            db.session.add(new_user)
+            db.session.flush()
+
+            new_user_role = SysUserRole()
+            new_user_role.user_id = new_user.user_id
+            new_user_role.role_id = role_id
+            db.session.add(new_user_role)
+
             db.session.commit()
         except Exception as e:
             db.session.rollback()
