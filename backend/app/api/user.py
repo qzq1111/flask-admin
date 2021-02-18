@@ -194,3 +194,11 @@ class UserMenuResource(Resource):
         data = tree.sidebar_tree()
         res.update(data=data)
         return res.data
+
+
+class UserLogout(Resource):
+
+    def post(self):
+        """退出登录"""
+        res = ResMsg()
+        return res.data

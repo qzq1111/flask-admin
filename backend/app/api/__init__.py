@@ -3,12 +3,13 @@ from flask_restful import Api
 
 from app.api.menu import MenuResource, GetMenuList, SelectMenus
 from app.api.role import RoleResource, RoleCheckMenusResource, RoleStatusResource
-from app.api.user import UserLogin, UserResource, UserInfoResource, UserMenuResource
+from app.api.user import UserLogin, UserResource, UserInfoResource, UserMenuResource, UserLogout
 
 # 用户
 api_user_bp = Blueprint("user", __name__, url_prefix="/api/v1/user")
 api_user = Api(api_user_bp)
 api_user.add_resource(UserLogin, '/login')
+api_user.add_resource(UserLogout, '/logout')
 api_user.add_resource(UserResource, '', "/<int:user_id>")
 api_user.add_resource(UserInfoResource, '/info')
 api_user.add_resource(UserMenuResource, '/menu')
