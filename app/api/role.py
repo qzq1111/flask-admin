@@ -1,5 +1,6 @@
 from flask_restful import Resource, reqparse
 
+from app import mark
 from app.auth import login_required
 from app.models import SysRole, SysMenu, SysRoleMenu, db
 from app.response import ResMsg
@@ -133,7 +134,7 @@ class RoleCheckMenusResource(Resource):
             res.update(code=-1, msg="参数缺失")
             return res.data
 
-        role = SysRole.query.filter(SysRole.role_id == role_id).first()
+        role = SysRole.query.filter(SysRole.role_id == role_id, SysRole.status == mark.Enable).first()
         if not role:
             res.update(code=-1, msg="角色不存在")
             return res.data
@@ -156,7 +157,7 @@ class RoleStatusResource(Resource):
         res = ResMsg()
         args = self.parser.parse_args()
         status = args.get("status")
-        if not role_id or status not in [0, 1]:
+        if not role_id or status not in [mark.Enable, mark.Disable]:
             res.update(code=-1, msg="参数缺失")
             return res.data
 
