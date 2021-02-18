@@ -1,8 +1,9 @@
+from flask import g
 from flask_restful import Resource, reqparse
 
-from app import utils
+from app import utils, mark
 from app.auth import login_required, generate_access_token
-from app.models import SysUser, db
+from app.models import SysUser, db, SysRole, SysUserRole, SysMenu, SysRoleMenu
 from app.response import ResMsg
 
 
@@ -101,4 +102,46 @@ class UserResource(Resource):
             res.update(code=-1, msg=str(e))
             return res.data
 
+        return res.data
+
+
+class UserInfoResource(Resource):
+
+    @login_required
+    def get(self):
+        """获取用户信息"""
+        res = ResMsg()
+        # step1 获取用户信息
+        user_id = g.user_id
+        user = SysUser.query.filter(SysUser.user_id == user_id).first()
+        if not user:
+            res.update(code=-1, msg="用户不存在")
+            return res.data
+
+        # step2 获取用户角色
+        role = db.session.query(SysRole). \
+            join(SysUserRole, SysUserRole.role_id == SysRole.role_id). \
+            filter(SysUserRole.user_id == user_id).first()
+        if not role:
+            res.update(code=-1, msg="用户角色不存在")
+            return res.data
+
+        # step3 获取用户菜单权限
+        perm = db.session.query(SysMenu.perms). \
+            join(SysRoleMenu, SysRoleMenu.menu_id == SysMenu.menu_id). \
+            filter(SysRoleMenu.role_id == role.role_id).all()
+
+        data = {
+            "user_id": user.user_id,
+            "user_name": user.user_name,
+            "user_status": user.status,
+            "role_id": role.role_id,
+            "role_name": role.role_name
+        }
+        if user_id == 1:
+            data["permissions"] = "*:*:*"
+        else:
+            data["permissions"] = [item.perms for item in perm]
+
+        res.update(data=data)
         return res.data

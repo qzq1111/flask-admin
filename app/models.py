@@ -1,5 +1,7 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+
+from app import mark
 from app.utils import get_md5
 
 db = SQLAlchemy()
@@ -12,7 +14,7 @@ class SysUser(db.Model):
     password = db.Column(db.String(36), nullable=False, info="密码")  # 密码
     create_time = db.Column(db.DateTime, nullable=False, default=datetime.now, info="创建时间")
     update_time = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now, info="更新时间")
-    status = db.Column(db.Integer, default=0, info="用户状态")  # 用户状态
+    status = db.Column(db.Integer, default=mark.Enable, info="用户状态")  # 用户状态，1正常，0禁用
 
     def check_password(self, p: str) -> bool:
         return get_md5(p.encode("utf-8")) == self.password
@@ -30,7 +32,7 @@ class SysRole(db.Model):
     role_name = db.Column(db.String(20), nullable=False, info="角色名")  # 角色名
     create_time = db.Column(db.DateTime, nullable=False, default=datetime.now, info="创建时间")
     update_time = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now, info="更新时间")
-    status = db.Column(db.Integer, default=0, info="角色状态")
+    status = db.Column(db.Integer, default=mark.Enable, info="角色状态")  # 1正常，0禁用
 
 
 class SysRoleMenu(db.Model):

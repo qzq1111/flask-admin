@@ -1,6 +1,6 @@
 import jwt
 from datetime import datetime, timedelta
-from flask import current_app, request, session
+from flask import request, g
 from functools import wraps
 
 from app.response import ResMsg
@@ -21,7 +21,6 @@ def generate_access_token(user_id, algorithm: str = 'HS256', exp: float = 2):
     exp_datetime = now + timedelta(hours=exp)
     access_payload = {
         'exp': exp_datetime,
-        'flag': 0,  # 标识是否为一次性token，0是，1不是
         'iat': now,  # 开始时间
         'iss': 'qin',  # 签名
         'user_id': user_id  # 自定义部分
@@ -65,6 +64,7 @@ def login_required(f):
             res.update(code=-1, msg="请登录")
             return res.data
 
+        g.user_id = payload["user_id"]  # 用户ID，当前请求上下文使用
         return f(*args, **kwargs)
 
     return wrapper
