@@ -5,6 +5,7 @@ from app import utils, mark
 from app.auth import login_required, generate_access_token
 from app.models import SysUser, db, SysRole, SysUserRole, SysMenu, SysRoleMenu
 from app.response import ResMsg
+from app.utils import BuildMenuTree
 
 
 class UserLogin(Resource):
@@ -13,11 +14,14 @@ class UserLogin(Resource):
     parser.add_argument('password', type=str, required=True, help='密码缺失')
 
     def post(self):
+        """用户登录"""
         res = ResMsg()
         args = self.parser.parse_args()
         user_name = args.get("user_name")
         password = args.get("password")
-        user = SysUser.query.filter(SysUser.user_name == user_name, SysUser.status == 0).first()
+
+        # step1 获取用户
+        user = SysUser.query.filter(SysUser.user_name == user_name, SysUser.status == mark.Enable).first()
         if not user:
             res.update(code=-1, msg="账号或密码错误")
             return res.data
@@ -26,7 +30,15 @@ class UserLogin(Resource):
             res.update(code=-1, msg="账号或密码错误")
             return res.data
 
-        res.update(data={"token": generate_access_token(user_id=user.user_id)})
+        # step2 获取用户角色
+        role = db.session.query(SysRole). \
+            join(SysUserRole, SysUserRole.role_id == SysRole.role_id). \
+            filter(SysUserRole.user_id == user.user_id, SysRole.status == mark.Enable).first()
+        if not role:
+            res.update(code=-1, msg="用户角色已被禁用或不存在")
+            return res.data
+
+        res.update(data={"token": generate_access_token(user_id=user.user_id, role_id=role.role_id)})
 
         return res.data
 
@@ -159,5 +171,22 @@ class UserInfoResource(Resource):
         else:
             data["permissions"] = [item.perms for item in perm]
 
+        res.update(data=data)
+        return res.data
+
+
+class UserMenuResource(Resource):
+
+    @login_required
+    def get(self):
+        """获取用户菜单"""
+        res = ResMsg()
+        role_id = g.role_id
+
+        query = db.session.query(SysMenu). \
+            join(SysRoleMenu, SysRoleMenu.menu_id == SysMenu.menu_id). \
+            filter(SysRoleMenu.role_id == role_id).all()
+        tree = BuildMenuTree(query)
+        data = tree.sidebar_tree()
         res.update(data=data)
         return res.data

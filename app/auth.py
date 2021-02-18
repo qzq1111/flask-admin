@@ -8,12 +8,13 @@ from app.response import ResMsg
 key = 'super-man$&123das%qzq'
 
 
-def generate_access_token(user_id, algorithm: str = 'HS256', exp: float = 2):
+def generate_access_token(user_id, role_id, algorithm: str = 'HS256', exp: float = 2):
     """
     生成access_token
-    :param user_id:自定义部分
-    :param algorithm:加密算法
-    :param exp:过期时间
+    :param user_id: 用户Id
+    :param role_id: 角色Id
+    :param algorithm: 加密算法
+    :param exp: 过期时间
     :return:
     """
 
@@ -23,7 +24,8 @@ def generate_access_token(user_id, algorithm: str = 'HS256', exp: float = 2):
         'exp': exp_datetime,
         'iat': now,  # 开始时间
         'iss': 'qin',  # 签名
-        'user_id': user_id  # 自定义部分
+        'user_id': user_id,  # 用户ID
+        'role_id': role_id,  # 角色Id
     }
     access_token = jwt.encode(access_payload, key, algorithm=algorithm)
     return access_token
@@ -64,7 +66,8 @@ def login_required(f):
             res.update(code=-1, msg="请登录")
             return res.data
 
-        g.user_id = payload["user_id"]  # 用户ID，当前请求上下文使用
+        g.user_id = payload.get("user_id")  # 用户ID，当前请求上下文使用
+        g.role_id = payload.get("role_id")  # 角色ID，当前请求上下文使用
         return f(*args, **kwargs)
 
     return wrapper
