@@ -3,7 +3,6 @@ from flask_restful import Resource, reqparse
 from app.auth import login_required
 from app.models import SysRole, SysMenu, SysRoleMenu, db
 from app.response import ResMsg
-from app.utils import BuildMenuTree
 
 
 class RoleResource(Resource):
@@ -127,6 +126,7 @@ class RoleCheckMenusResource(Resource):
 
     @login_required
     def get(self, role_id):
+        """获取角色已绑定的菜单ID"""
         res = ResMsg()
 
         if not role_id:
@@ -143,4 +143,34 @@ class RoleCheckMenusResource(Resource):
         data = [item.menu_id for item in menus]
         res.update(data=data)
 
+        return res.data
+
+
+class RoleStatusResource(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('status', type=int, required=True, help='角色状态码缺失')
+
+    @login_required
+    def put(self, role_id):
+        """修改角色状态"""
+        res = ResMsg()
+        args = self.parser.parse_args()
+        status = args.get("status")
+        if not role_id or status not in [0, 1]:
+            res.update(code=-1, msg="参数缺失")
+            return res.data
+
+        role = SysRole.query.filter(SysRole.role_id == role_id).first()
+        if not role:
+            res.update(code=-1, msg="角色不存在")
+            return res.data
+
+        try:
+            role.status = status
+            db.session.add(role)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            res.update(code=-1, msg=str(e))
+            return res.data
         return res.data
