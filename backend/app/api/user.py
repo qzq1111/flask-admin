@@ -231,6 +231,36 @@ class UserMenuResource(Resource):
         return res.data
 
 
+class UserStatusResource(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('status', type=int, required=True, help='用户状态码缺失')
+
+    @login_required
+    def put(self, user_id):
+        """修改用户状态"""
+        res = ResMsg()
+        args = self.parser.parse_args()
+        status = args.get("status")
+        if not user_id or status not in [mark.Enable, mark.Disable]:
+            res.update(code=-1, msg="参数缺失")
+            return res.data
+
+        user = SysUser.query.filter(SysUser.user_id == user_id).first()
+        if not user:
+            res.update(code=-1, msg="用户不存在")
+            return res.data
+
+        try:
+            user.status = status
+            db.session.add(user)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            res.update(code=-1, msg=str(e))
+            return res.data
+        return res.data
+
+
 class UserLogout(Resource):
 
     def post(self):

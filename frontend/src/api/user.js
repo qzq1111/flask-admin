@@ -21,3 +21,19 @@ export function logout() {
     method: 'post'
   })
 }
+
+export function getUserList(data) {
+  return request({
+    url: '/v1/user/list',
+    method: 'get',
+    params: data
+  })
+}
+
+export function changeUserStatus(user_id,data){
+  return request({
+    url: `/v1/user/${user_id}/status`,
+    method: 'put',
+    data
+  })
+}

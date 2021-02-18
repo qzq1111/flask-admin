@@ -1,19 +1,44 @@
 <template>
   <div class="app-container">
-    <el-form :inline="true" :model="search" class="demo-form-inline">
+    <el-form
+      :inline="true"
+      :model="search"
+      class="demo-form-inline"
+      size="small"
+    >
       <el-form-item label="账号">
-        <el-input v-model="search.user" placeholder="账号"></el-input>
+        <el-input
+          v-model="search.user_name"
+          placeholder="账号"
+          clearable
+        ></el-input>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="onSubmit">查询</el-button>
       </el-form-item>
     </el-form>
-    <el-table :data="tableData" style="width: 100%">
-      <el-table-column type="index" width="50"> </el-table-column>
-      <el-table-column prop="date" label="账号"> </el-table-column>
-      <el-table-column prop="date" label="角色"> </el-table-column>
-      <el-table-column prop="name" label="状态"> </el-table-column>
-      <el-table-column prop="date" label="创建时间"> </el-table-column>
+
+    <el-table
+      :data="userList"
+      style="width: 100%"
+      v-loading="listLoading"
+      element-loading-text="Loading"
+    >
+      <el-table-column type="index" width="50" label="#"> </el-table-column>
+      <el-table-column prop="user_name" label="账号"> </el-table-column>
+      <el-table-column prop="role_name" label="角色"> </el-table-column>
+      <el-table-column label="状态">
+        <template slot-scope="scope">
+          <el-switch
+            v-model="scope.row.status"
+            :active-value="1"
+            :inactive-value="0"
+            @change="handleStatusChange(scope.row)"
+          >
+          </el-switch>
+        </template>
+      </el-table-column>
+      <el-table-column prop="create_time" label="创建时间"> </el-table-column>
       <el-table-column fixed="right" label="操作">
         <template>
           <el-button type="text" size="small">查看</el-button>
@@ -24,49 +49,81 @@
     <el-pagination
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
-      :current-page="currentPage"
-      :page-sizes="[100, 200, 300, 400]"
-      :page-size="100"
+      :current-page="search.page"
+      :page-sizes="[10, 20, 50, 100]"
+      :page-size="search.page_size"
       layout="total, sizes, prev, pager, next, jumper"
-      :total="400"
+      :total="total"
     >
     </el-pagination>
   </div>
 </template>
 
 <script>
+import { getUserList, changeUserStatus } from "@/api/user";
+
 export default {
   data() {
     return {
-      currentPage: 1,
+      listLoading: true,
+      total: 0,
       search: {
-        user: "",
+        user_name: "",
+        page: 1,
+        page_size: 10,
       },
-      tableData: [
-        {
-          date: "2016-05-02",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄",
-        },
-        {
-          date: "2016-05-04",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1517 弄",
-        },
-        {
-          date: "2016-05-01",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1519 弄",
-        },
-        {
-          date: "2016-05-03",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1516 弄",
-        },
-      ],
+      userList: [],
     };
   },
-  methods: {},
+  created() {
+    this.fetchUserListData();
+  },
+  methods: {
+    handleStatusChange(row) {
+      console.log(row);
+      let text = row.status === 1 ? "启用" : "禁用";
+      this.$confirm(
+        '确认要' + text + ':' + row.user_name + ' 用户吗?',
+        "警告",
+        {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
+        }
+      )
+        .then(function () {
+          return changeUserStatus(row.user_id, { status: row.status });
+        })
+        .then(() => {
+          this.$message.success(text + "成功");
+        })
+        .catch(function () {
+          row.status = row.status === 0 ? 1 : 0;
+        });
+    },
+
+    onSubmit() {
+      this.search.page = 1;
+      this.fetchUserListData();
+    },
+    handleSizeChange(val) {
+      this.search.page_size = val;
+      this.fetchUserListData();
+    },
+    handleCurrentChange(val) {
+      this.search.page = val;
+      this.fetchUserListData();
+    },
+
+    fetchUserListData() {
+      this.listLoading = true;
+      getUserList(this.search).then((response) => {
+        this.userList = response.data;
+        this.total = response.total;
+        this.listLoading = false;
+      });
+    },
+  },
 };
 </script>
 
