@@ -17,9 +17,9 @@
     </el-row>
     <el-row>
       <el-col style="text-align: right" :span="22">
-        <el-button type="primary" size="small" @click="onAddUser"
-          >新增</el-button
-        >
+        <el-button type="primary" size="small" @click="onOpenAddUser">
+          新增
+        </el-button>
       </el-col>
     </el-row>
 
@@ -61,21 +61,64 @@
       :total="total"
     >
     </el-pagination>
-    <userTemplate
+
+    <el-dialog
       v-if="userVisible"
+      title="新增用户"
       :visible="userVisible"
       @close="userVisible = false"
-    ></userTemplate>
+    >
+      <el-form
+        :model="userForm"
+        :rules="userRules"
+        ref="userForm"
+        label-width="80px"
+      >
+        <el-form-item label="账号" prop="user_name">
+          <el-input
+            v-model="userForm.user_name"
+            placeholder="请输入账号"
+            autocomplete="off"
+            style="width: 50%"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input
+            v-model="userForm.password"
+            placeholder="请输入密码"
+            type="password"
+            style="width: 50%"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="角色" prop="role_id">
+          <el-select
+            v-model="userForm.role_id"
+            placeholder="请选择角色"
+            style="width: 50%"
+          >
+            <el-option
+              v-for="item in roleLabels"
+              :key="item.role_id"
+              :label="item.role_name"
+              :value="item.role_id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="userVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleAddUser('userForm')"
+          >确 定</el-button
+        >
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import { getUserList, changeUserStatus } from "@/api/user";
-import userTemplate from "./userTemplate";
+import { getRoleLabels } from "@/api/role";
 export default {
-  components: {
-    userTemplate,
-  },
   data() {
     return {
       userVisible: false,
@@ -87,15 +130,60 @@ export default {
         page_size: 10,
       },
       userList: [],
+      userForm: {
+        user_name: "",
+        password: "",
+        role_id: "",
+      },
+      roleLabels: [],
+      userRules: {
+        user_name: [
+          { required: true, message: "请输入账号", trigger: "blur" },
+          {
+            min: 3,
+            max: 20,
+            message: "长度在 3 到 20 个字符",
+            trigger: "blur",
+          },
+        ],
+        password: [
+          { required: true, message: "请输入密码", trigger: "blur" },
+          { min: 6, message: "至少6个字符", trigger: "blur" },
+        ],
+        role_id: [{ required: true, message: "请选择角色", trigger: "change" }],
+      },
     };
   },
   created() {
     this.fetchUserListData();
   },
   methods: {
-    onAddUser() {
+    // 打开添加用户界面
+    onOpenAddUser() {
+      this.userForm = {
+        user_name: "",
+        password: "",
+        role_id: "",
+      };
+      getRoleLabels().then((response) => {
+        this.roleLabels = response.data;
+      });
       this.userVisible = true;
     },
+    // 添加用户
+    handleAddUser(formName) {
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          console.log(this.userForm);
+          this.userVisible = false;
+          this.$refs[formName].resetFields();
+        } else {
+          console.log("error submit!!");
+          return false;
+        }
+      });
+    },
+    // 修改用户状态
     handleStatusChange(row) {
       console.log(row);
       let text = row.status === 1 ? "启用" : "禁用";
@@ -118,20 +206,22 @@ export default {
           row.status = row.status === 0 ? 1 : 0;
         });
     },
-
+    // 搜索用户
     onSearch() {
       this.search.page = 1;
       this.fetchUserListData();
     },
+    // 修改每页数据量
     handleSizeChange(val) {
       this.search.page_size = val;
       this.fetchUserListData();
     },
+    // 修改当前页
     handleCurrentChange(val) {
       this.search.page = val;
       this.fetchUserListData();
     },
-
+    // 获取用户列表
     fetchUserListData() {
       this.listLoading = true;
       getUserList(this.search).then((response) => {

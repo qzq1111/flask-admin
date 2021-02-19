@@ -2,7 +2,7 @@ from flask import Blueprint
 from flask_restful import Api
 
 from app.api.menu import MenuResource, GetMenuList, SelectMenus
-from app.api.role import RoleResource, RoleCheckMenusResource, RoleStatusResource
+from app.api.role import RoleResource, RoleCheckMenusResource, RoleStatusResource, RoleLabelResource
 from app.api.user import UserLogin, UserResource, UserInfoResource, UserMenuResource, UserLogout, UserListResource, \
     UserStatusResource
 
@@ -23,6 +23,7 @@ api_role = Api(api_role_bp)
 api_role.add_resource(RoleResource, '', "/<int:role_id>")
 api_role.add_resource(RoleCheckMenusResource, '/<int:role_id>/checkMenus')
 api_role.add_resource(RoleStatusResource, '/<int:role_id>/status')
+api_role.add_resource(RoleLabelResource, '/labels')
 
 # 菜单
 api_menu_bp = Blueprint("menu", __name__, url_prefix="/api/v1/menu")

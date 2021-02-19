@@ -175,3 +175,15 @@ class RoleStatusResource(Resource):
             res.update(code=-1, msg=str(e))
             return res.data
         return res.data
+
+
+class RoleLabelResource(Resource):
+
+    @login_required
+    def get(self):
+        """获取角色ID名字列表"""
+        res = ResMsg()
+        roles = db.session.query(SysRole.role_id, SysRole.role_name).all()
+        data = [dict(zip(role.keys(), role)) for role in roles]
+        res.update(data=data)
+        return res.data
