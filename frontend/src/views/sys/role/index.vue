@@ -44,8 +44,13 @@
       </el-table-column>
       <el-table-column prop="create_time" label="创建时间"> </el-table-column>
       <el-table-column fixed="right" label="操作">
-        <template>
-          <el-button type="text" size="small">编辑</el-button>
+        <template slot-scope="scope">
+          <el-button
+            type="text"
+            size="small"
+            @click="openEditRole(scope.row.role_id)"
+            >编辑</el-button
+          >
           <el-button type="text" size="small">删除</el-button>
         </template>
       </el-table-column>
@@ -99,11 +104,58 @@
         >
       </div>
     </el-dialog>
+
+    <el-dialog
+      v-if="editRoelVisible"
+      title="新增角色"
+      :visible="editRoelVisible"
+      @close="editRoelVisible = false"
+    >
+      <el-form
+        :model="editRoleForm"
+        :rules="roleRules"
+        ref="editRoleForm"
+        label-width="80px"
+      >
+        <el-form-item label="角色" prop="role_name">
+          <el-input
+            v-model="editRoleForm.role_name"
+            placeholder="请输入角色"
+            autocomplete="off"
+            style="width: 50%"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="菜单权限" prop="menu_ids">
+          <el-tree
+            :data="menus"
+            :default-checked-keys="check_menus"
+            show-checkbox
+            ref="edit_role_tree"
+            node-key="id"
+            style="width: 50%"
+          >
+          </el-tree>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="editRoelVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleEditRole('editRoleForm')"
+          >确 定</el-button
+        >
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { getRoleList, changeRoleStatus, addRole } from "@/api/role";
+import {
+  getRoleList,
+  changeRoleStatus,
+  addRole,
+  getRoleById,
+  getRoleCheckMenus,
+  updateRole,
+} from "@/api/role";
 import { getMenuLabels } from "@/api/menu";
 export default {
   data() {
@@ -134,12 +186,21 @@ export default {
         menu_ids: [],
       },
       menus: [],
+
+      editRoelVisible: false,
+      editRoleForm: {
+        role_id: "",
+        role_name: "",
+        menu_ids: [],
+      },
+      check_menus: [],
     };
   },
   created() {
     this.fetchRoleListData();
   },
   methods: {
+    // 新建界面
     openAddRole() {
       getMenuLabels().then((response) => {
         this.menus = response.data;
@@ -151,21 +212,58 @@ export default {
       };
       this.addRoelVisible = true;
     },
-
+    // 新建处理
     handleAddRole(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          this.addRoleForm.menu_ids = this.$refs.role_tree.getCheckedKeys();
+          this.addRoleForm.menu_ids = this.$refs.edit_role_tree.getCheckedKeys();
           addRole(this.addRoleForm).then((res) => {
             this.$message.success("添加成功");
             this.addRoelVisible = false;
             this.$refs[formName].resetFields();
+            this.fetchRoleListData();
           });
         } else {
           return false;
         }
       });
     },
+
+    // 修改界面
+    openEditRole(roel_id) {
+      getMenuLabels().then((response) => {
+        this.menus = response.data;
+      });
+      getRoleCheckMenus(roel_id).then((response) => {
+        this.check_menus = response.data;
+      });
+      getRoleById(roel_id).then((response) => {
+        this.editRoleForm = response.data;
+      });
+
+      this.editRoelVisible = true;
+    },
+
+    // 修改处理
+    handleEditRole(formName) {
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          this.editRoleForm.menu_ids = this.$refs.edit_role_tree.getCheckedKeys();
+          updateRole(this.editRoleForm.role_id, this.editRoleForm).then(
+            (res) => {
+              this.$message.success("修改成功");
+              this.editRoelVisible = false;
+              this.check_menus = [];
+              this.$refs[formName].resetFields();
+              this.fetchRoleListData();
+            }
+          );
+        } else {
+          return false;
+        }
+      });
+    },
+
     // 修改角色状态
     handleStatusChange(row) {
       let text = row.status === 1 ? "启用" : "禁用";

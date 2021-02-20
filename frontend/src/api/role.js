@@ -31,3 +31,26 @@ export function addRole(data) {
     data
   })
 }
+
+export function getRoleById(role_id) {
+  return request({
+    url: `/v1/role/${role_id}`,
+    method: 'get'
+  })
+}
+
+export function getRoleCheckMenus(role_id) {
+  return request({
+    url: `/v1/role/${role_id}/check`,
+    method: 'get'
+  })
+}
+
+export function updateRole(role_id,data) {
+  return request({
+    url: `/v1/role/${role_id}`,
+    method: 'put',
+    data
+  })
+}
+
