@@ -187,3 +187,31 @@ class RoleLabelResource(Resource):
         data = [dict(zip(role.keys(), role)) for role in roles]
         res.update(data=data)
         return res.data
+
+
+class RoleListResource(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('role_name', type=str, help='角色名')
+    parser.add_argument('page', type=int, help='页码')
+    parser.add_argument('page_size', type=int, help='条数')
+
+    @login_required
+    def get(self):
+        """获取角色列表"""
+
+        res = ResMsg()
+        args = self.parser.parse_args()
+        role_name = args.get("role_name")
+        page = args.get("page") or mark.DefaultPage
+        page_size = args.get("page_size") or mark.DefaultPageSize
+
+        query = db.session.query(SysRole.role_id, SysRole.role_name, SysRole.status, SysRole.create_time)
+        if role_name:
+            query = query.filter(SysRole.role_name.like(f'%{role_name}%'))
+
+        total = query.count()
+        roles = query.slice((page - 1) * page_size, page * page_size).all()
+        data = [dict(zip(role.keys(), role)) for role in roles]
+        res.update(data=data)
+        res.add_field("total", total)
+        return res.data
