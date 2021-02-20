@@ -17,7 +17,9 @@
     </el-row>
     <el-row>
       <el-col style="text-align: right" :span="22">
-        <el-button type="primary" size="small"> 新增 </el-button>
+        <el-button type="primary" size="small" @click="openAddRole">
+          新增
+        </el-button>
       </el-col>
     </el-row>
 
@@ -58,11 +60,51 @@
       :total="total"
     >
     </el-pagination>
+
+    <el-dialog
+      v-if="addRoelVisible"
+      title="新增角色"
+      :visible="addRoelVisible"
+      @close="addRoelVisible = false"
+    >
+      <el-form
+        :model="addRoleForm"
+        :rules="roleRules"
+        ref="addRoleForm"
+        label-width="80px"
+      >
+        <el-form-item label="角色" prop="role_name">
+          <el-input
+            v-model="addRoleForm.role_name"
+            placeholder="请输入角色"
+            autocomplete="off"
+            style="width: 50%"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="菜单权限" prop="menu_ids">
+          <el-tree
+            :data="menus"
+            show-checkbox
+            ref="role_tree"
+            node-key="id"
+            style="width: 50%"
+          >
+          </el-tree>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="addRoelVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleAddRole('addRoleForm')"
+          >确 定</el-button
+        >
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { getRoleList, changeRoleStatus } from "@/api/role";
+import { getRoleList, changeRoleStatus, addRole } from "@/api/role";
+import { getMenuLabels } from "@/api/menu";
 export default {
   data() {
     return {
@@ -75,13 +117,56 @@ export default {
       listLoading: true,
       total: 0,
       roleList: [],
+      addRoelVisible: false,
+      roleRules: {
+        role_name: [
+          { required: true, message: "请输入角色", trigger: "blur" },
+          {
+            min: 3,
+            max: 20,
+            message: "长度在 3 到 20 个字符",
+            trigger: "blur",
+          },
+        ],
+      },
+      addRoleForm: {
+        role_name: "",
+        menu_ids: [],
+      },
+      menus: [],
     };
   },
   created() {
     this.fetchRoleListData();
   },
   methods: {
-    // 修改用户状态
+    openAddRole() {
+      getMenuLabels().then((response) => {
+        this.menus = response.data;
+      });
+
+      this.addRoleForm = {
+        role_name: "",
+        menu_ids: [],
+      };
+      this.addRoelVisible = true;
+    },
+
+    handleAddRole(formName) {
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          this.addRoleForm.menu_ids = this.$refs.role_tree.getCheckedKeys();
+          addRole(this.addRoleForm).then((res) => {
+            this.$message.success("添加成功");
+            this.addRoelVisible = false;
+            this.$refs[formName].resetFields();
+          });
+        } else {
+          return false;
+        }
+      });
+    },
+    // 修改角色状态
     handleStatusChange(row) {
       let text = row.status === 1 ? "启用" : "禁用";
       this.$confirm(

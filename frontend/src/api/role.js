@@ -23,3 +23,11 @@ export function changeRoleStatus(role_id, data) {
     data
   })
 }
+
+export function addRole(data) {
+  return request({
+    url: `/v1/role`,
+    method: 'post',
+    data
+  })
+}
