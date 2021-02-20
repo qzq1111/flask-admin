@@ -17,7 +17,7 @@
     </el-row>
     <el-row>
       <el-col style="text-align: right" :span="22">
-        <el-button type="primary" size="small" @click="onOpenAddUser">
+        <el-button type="primary" size="small" @click="openAddUser">
           新增
         </el-button>
       </el-col>
@@ -45,9 +45,9 @@
       </el-table-column>
       <el-table-column prop="create_time" label="创建时间"> </el-table-column>
       <el-table-column fixed="right" label="操作">
-        <template>
-          <el-button type="text" size="small">查看</el-button>
+        <template slot-scope="scope">
           <el-button type="text" size="small">编辑</el-button>
+          <el-button type="text" size="small" @click="openEditUser(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -63,20 +63,20 @@
     </el-pagination>
 
     <el-dialog
-      v-if="userVisible"
+      v-if="addUserVisible"
       title="新增用户"
-      :visible="userVisible"
-      @close="userVisible = false"
+      :visible="addUserVisible"
+      @close="addUserVisible = false"
     >
       <el-form
-        :model="userForm"
+        :model="addUserForm"
         :rules="userRules"
-        ref="userForm"
+        ref="addUserForm"
         label-width="80px"
       >
         <el-form-item label="账号" prop="user_name">
           <el-input
-            v-model="userForm.user_name"
+            v-model="addUserForm.user_name"
             placeholder="请输入账号"
             autocomplete="off"
             style="width: 50%"
@@ -84,7 +84,7 @@
         </el-form-item>
         <el-form-item label="密码" prop="password">
           <el-input
-            v-model="userForm.password"
+            v-model="addUserForm.password"
             placeholder="请输入密码"
             type="password"
             style="width: 50%"
@@ -92,7 +92,7 @@
         </el-form-item>
         <el-form-item label="角色" prop="role_id">
           <el-select
-            v-model="userForm.role_id"
+            v-model="addUserForm.role_id"
             placeholder="请选择角色"
             style="width: 50%"
           >
@@ -106,8 +106,8 @@
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="userVisible = false">取 消</el-button>
-        <el-button type="primary" @click="handleAddUser('userForm')"
+        <el-button @click="addUserVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleAddUser('addUserForm')"
           >确 定</el-button
         >
       </div>
@@ -116,12 +116,12 @@
 </template>
 
 <script>
-import { getUserList, changeUserStatus } from "@/api/user";
+import { getUserList, addUser, getUser, changeUserStatus } from "@/api/user";
 import { getRoleLabels } from "@/api/role";
 export default {
   data() {
     return {
-      userVisible: false,
+      addUserVisible: false,
       listLoading: true,
       total: 0,
       search: {
@@ -130,7 +130,7 @@ export default {
         page_size: 10,
       },
       userList: [],
-      userForm: {
+      addUserForm: {
         user_name: "",
         password: "",
         role_id: "",
@@ -159,8 +159,8 @@ export default {
   },
   methods: {
     // 打开添加用户界面
-    onOpenAddUser() {
-      this.userForm = {
+    openAddUser() {
+      this.addUserForm = {
         user_name: "",
         password: "",
         role_id: "",
@@ -168,17 +168,18 @@ export default {
       getRoleLabels().then((response) => {
         this.roleLabels = response.data;
       });
-      this.userVisible = true;
+      this.addUserVisible = true;
     },
     // 添加用户
     handleAddUser(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          console.log(this.userForm);
-          this.userVisible = false;
-          this.$refs[formName].resetFields();
+          addUser(this.addUserForm).then((res) => {
+            this.$message.success("添加成功");
+            this.addUserVisible = false;
+            this.$refs[formName].resetFields();
+          });
         } else {
-          console.log("error submit!!");
           return false;
         }
       });

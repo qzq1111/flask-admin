@@ -30,10 +30,25 @@ export function getUserList(data) {
   })
 }
 
-export function changeUserStatus(user_id,data){
+export function changeUserStatus(user_id, data) {
   return request({
     url: `/v1/user/${user_id}/status`,
     method: 'put',
     data
+  })
+}
+
+export function addUser(data) {
+  return request({
+    url: `/v1/user`,
+    method: 'post',
+    data
+  })
+}
+
+export function getUser(user_id) {
+  return request({
+    url: `/v1/user/${user_id}`,
+    method: 'get'
   })
 }
